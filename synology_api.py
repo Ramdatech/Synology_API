@@ -105,10 +105,27 @@ class Synology:
         param['_sid'] = self.fs_sid
         response = requests.get(url=url, params=param)
         result = response.json()
-        print(result)
         if result['success'] :
             print(f">> Done : Move")
         else :
             print(">> Fail : Move")
+
+
+    def create_folder(self, path, name):
+        url = self.url + '/webapi/entry.cgi?'
+        param = {}
+        param['api'] = 'SYNO.FileStation.CreateFolder'
+        param['version'] = '2'
+        param['method'] = 'create'
+        param['folder_path'] = path
+        param['name'] = name
+        param['_sid'] = self.fs_sid
+        response = requests.get(url=url, params=param)
+        result = response.json()
+        print(result)
+        if result['success'] :
+            print(f">> Done : Create Folder")
+        else :
+            print(">> Fail : Create Folder")
 
 
