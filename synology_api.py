@@ -92,3 +92,23 @@ class Synology:
         else :
             print(">> Fail : Rename")
 
+
+    def move_file(self, src, dst):
+        url = self.url + '/webapi/entry.cgi?'
+        param = {}
+        param['api'] = 'SYNO.FileStation.CopyMove'
+        param['version'] = '3'
+        param['method'] = 'start'
+        param['path'] = src
+        param['dest_folder_path'] = dst
+        param['remove_src'] = 'true'
+        param['_sid'] = self.fs_sid
+        response = requests.get(url=url, params=param)
+        result = response.json()
+        print(result)
+        if result['success'] :
+            print(f">> Done : Move")
+        else :
+            print(">> Fail : Move")
+
+
