@@ -1,3 +1,5 @@
+import time
+import urllib
 import requests
 
 class Synology:
@@ -122,10 +124,24 @@ class Synology:
         param['_sid'] = self.fs_sid
         response = requests.get(url=url, params=param)
         result = response.json()
-        print(result)
         if result['success'] :
             print(f">> Done : Create Folder")
         else :
             print(">> Fail : Create Folder")
 
 
+    def download_and_move(self, url, newname):
+        temp = urllib.parse.urlparse(url)
+        fileurl = temp.netloc + temp.path
+        filename = fileurl.split("/")[-1]
+        self.create_download_task('https://'+ fileurl)
+        filepath = '/'.join(["/Downloads", filename])
+        while 1 :
+            time.sleep(1)
+            ls = self.get_list_folder("/Downloads")
+            if filepath in ls:
+                self.update_file_name(filepath, newname)
+                print(f">> Done : Download & Rename")
+                break
+            else :
+                print('>> Not Match...')
