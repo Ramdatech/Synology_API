@@ -25,7 +25,7 @@ class Synology:
         response = requests.get(url=url, params=param)
         self.fs_sid = response.json()['data']['sid']
 
-    def create_download_task(self, target_url):
+    def create_download_task(self, target_url, dst):
         url = self.url + '/webapi/DownloadStation/task.cgi'
         data = {}
         data['sid'] = ''
@@ -33,6 +33,7 @@ class Synology:
         data['version'] = '1'
         data['method'] = 'create'
         data['uri'] = target_url
+        data['destination'] = dst
         data['_sid'] = self.ds_sid
         response = requests.post(url, data=data, verify=False)
         bs = response.json()
@@ -59,7 +60,7 @@ class Synology:
             print(">> Fail : get list folder(share)")
             return []
 
-    def get_list_folder(self, path):
+    def get_list_folder(self, path, printType=True):
         url = self.url + '/webapi/entry.cgi?'
         param = {}
         param['api'] = 'SYNO.FileStation.List'
@@ -70,14 +71,15 @@ class Synology:
         response = requests.get(url=url, params=param)
         result = response.json()
         if result['success'] :
-            print(">> Done : get list folder")
+            if printType :
+                print(">> Done : get list folder")
             filelist = [x['path'] for x in result['data']['files']]
             return filelist
         else :
             print(">> Fail : get list folder")
             return []
 
-    def update_file_name(self, src, new_name):
+    def update_file_name(self, src, new_name, printType=True):
         url = self.url + '/webapi/entry.cgi?'
         param = {}
         param['api'] = 'SYNO.FileStation.Rename'
@@ -90,8 +92,10 @@ class Synology:
         result = response.json()
         if result['success'] :
             path, name = result['data']['files'][0]['path'], result['data']['files'][0]['name']
-            print(f">> Done : Rename, '{path}' => '{name}'")
+            if printType :
+                print(f">> Done : Rename, '{path}' => '{name}'")
         else :
+            print(result)
             print(">> Fail : Rename")
 
 
@@ -127,21 +131,25 @@ class Synology:
         if result['success'] :
             print(f">> Done : Create Folder")
         else :
+            print(result)
             print(">> Fail : Create Folder")
 
 
-    def download_and_move(self, url, newname):
+    def download_and_move(self, url, dst, newname):
         temp = urllib.parse.urlparse(url)
         fileurl = temp.netloc + temp.path
         filename = fileurl.split("/")[-1]
-        self.create_download_task('https://'+ fileurl)
-        filepath = '/'.join(["/Downloads", filename])
+        self.create_download_task('https://'+ fileurl, dst[1:])
+        filepath = '/'.join([dst, filename])
         while 1 :
-            time.sleep(1)
-            ls = self.get_list_folder("/Downloads")
+            ls = self.get_list_folder(dst, printType=False)
             if filepath in ls:
+                print("")
+                time.sleep(5)
                 self.update_file_name(filepath, newname)
                 print(f">> Done : Download & Rename")
                 break
             else :
-                print('>> Not Match...')
+                for i in range(5):
+                    print(f"\r>> Not Match{'.'*i}", end="")
+                    time.sleep(1)
